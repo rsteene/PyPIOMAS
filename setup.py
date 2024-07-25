@@ -5,7 +5,7 @@ setuptools.setup(
     version='0.1.2',
     author='Weiming Hu',
     author_email='weiming@psu.edu',
-    url='https://github.com/Weiming-Hu/PyPIOMAS',
+    url='https://github.com/rsteene/PyPIOMAS',
     packages=['PyPIOMAS'],
     license='LICENSE',
     description='A package for downloading and converting the PIOMAS dataset',
