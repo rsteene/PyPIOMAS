@@ -159,7 +159,7 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
     if short_name in (
             'icevel',                 # U and V components need to be parsed. Can't find documentation of the data.
             'gice', 'giceday',        # A sub-grid is used but I did not implement the method for that
-            'otemp1_10', 'osali1_10'  # A 3D grid is used but currently I have only dealt with the 2D grid.
+#            'otemp1_10', 'osali1_10'  # A 3D grid is used but currently I have only dealt with the 2D grid.
     ):
         if verbose:
             warnings.warn('Currently not supporting conversion of {}'.format(short_name))
@@ -180,26 +180,51 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
     data = struct.unpack('f' * count, file_content)
 
     # Reshape data
-    data = np.array(data).reshape((-1, num_grids))
-
-    # Determine variable name
-    var_name = '{}_{}'.format(short_name, year)
-
-    if data.shape[0] == 12:
-        # Data are monthly averages
-        data = xr.DataArray(data, dims=('month', 'grid'), name=var_name)
-
-    elif data.shape[0] == 365:
-        # Data are daily averages
-        data = xr.DataArray(data, dims=('day', 'grid'), name=var_name)
-
-    elif int(year) == datetime.date.today().year:
-        # Data for current year could be incomplete but should be allowed
-        data = xr.DataArray(data, dims=('dim_0_{}'.format(var_name), 'grid'), name=var_name)
-
+    if short_name in (
+            'otemp1_10', 'osali1_10'  # A 3D grid is used
+    ):
+        data = np.array(data).reshape((-1, 10, num_grids))
+        
+        # Determine variable name
+        var_name = '{}_{}'.format(short_name, year)
+        
+        if data.shape[0] == 12:
+            # Data are monthly averages
+            data = xr.DataArray(data, dims=('month', 'level', 'grid'), name=var_name)
+        
+        elif data.shape[0] == 365:
+            # Data are daily averages
+            data = xr.DataArray(data, dims=('day', 'level', 'grid'), name=var_name)
+        
+        elif int(year) == datetime.date.today().year:
+            # Data for current year could be incomplete but should be allowed
+            data = xr.DataArray(data, dims=('dim_0_{}'.format(var_name), 'level', 'grid'), name=var_name)
+        
+        else:
+            warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
+            return
+    
     else:
-        warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
-        return
+        data = np.array(data).reshape((-1, num_grids))
+        
+        # Determine variable name
+        var_name = '{}_{}'.format(short_name, year)
+    
+        if data.shape[0] == 12:
+            # Data are monthly averages
+            data = xr.DataArray(data, dims=('month', 'grid'), name=var_name)
+    
+        elif data.shape[0] == 365:
+            # Data are daily averages
+            data = xr.DataArray(data, dims=('day', 'grid'), name=var_name)
+    
+        elif int(year) == datetime.date.today().year:
+            # Data for current year could be incomplete but should be allowed
+            data = xr.DataArray(data, dims=('dim_0_{}'.format(var_name), 'grid'), name=var_name)
+    
+        else:
+            warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
+            return
 
     # Assign attributes
     data = data.assign_attrs(long_name=long_name, units=unit)
