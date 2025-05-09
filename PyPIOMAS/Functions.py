@@ -264,7 +264,7 @@ def stack_variables_by_years(file_in, file_out, variable, verbose=True):
         print('Stacking [{}] to be {} ...'.format(', '.join(variables_to_stack), variable))
 
     # Stack
-    years = [int(var.split('_')[1]) for var in variables_to_stack]
+    years = [int(var.split('_')[-1]) for var in variables_to_stack]
     da = xr.concat([ds[var] for var in variables_to_stack], dim='year', coords='minimal')
 
     # Fix meta information
