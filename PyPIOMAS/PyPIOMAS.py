@@ -224,7 +224,12 @@ class PyPIOMAS:
                 print('Stacking multiple years ...')
 
             for variable in self.variables:
-                stack_variables_by_years(file_out, file_tmp, variable, self.verbose)
+                if variable == 'icevel':
+                    var_uv = ['uice', 'vice']
+                    for variable_uv in var_uv:
+                        stack_variables_by_years(file_out, file_tmp, variable_uv, self.verbose)
+                else:
+                    stack_variables_by_years(file_out, file_tmp, variable, self.verbose)
 
             os.remove(file_out)
             os.rename(file_tmp, file_out)
