@@ -157,7 +157,7 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
 
     # Excluding the following variables due to various reasons
     if short_name in (
-            'icevel',                 # U and V components need to be parsed. Can't find documentation of the data.
+#            'icevel',                 # U and V components need to be parsed. Can't find documentation of the data.
             'gice', 'giceday',        # A sub-grid is used but I did not implement the method for that
 #            'otemp1_10', 'osali1_10'  # A 3D grid is used but currently I have only dealt with the 2D grid.
     ):
@@ -172,13 +172,13 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
     # Read the raw data
     with open(file_in, mode='rb') as con:
         file_content = con.read()
-
+    
     # Calculate the count of floating-point numbers
     count = len(file_content) // 4
-
+    
     # Unpack data
     data = struct.unpack('f' * count, file_content)
-
+    
     # Reshape data
     if short_name in (
             'otemp1_10', 'osali1_10'  # A 3D grid is used
@@ -202,8 +202,47 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
         
         else:
             warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
-            return
     
+        # Assign attributes and write to file
+        data = data.assign_attrs(long_name=long_name, units=unit)
+        data.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
+            
+        
+    elif short_name in (
+            'icevel'  # u and v components need to be parsed 
+    ):
+        data = np.array(data)
+        data_u = data[:data.size//2].reshape((-1, num_grids))
+        data_v = data[data.size//2:].reshape((-1, num_grids))
+    
+        # Determine variable name
+        var_name_u = 'uice_{}'.format(year)
+        var_name_v = 'vice_{}'.format(year)
+    
+        if data_u.shape[0] == 12:
+            # Data are monthly averages
+            data_u = xr.DataArray(data_u, dims=('month', 'grid'), name=var_name_u)
+            data_v = xr.DataArray(data_v, dims=('month', 'grid'), name=var_name_v)
+    
+        elif data_u.shape[0] == 365:
+            # Data are daily averages
+            data_u = xr.DataArray(data_u, dims=('day', 'grid'), name=var_name_u)
+            data_v = xr.DataArray(data_v, dims=('day', 'grid'), name=var_name_v)
+    
+        elif int(year) == datetime.date.today().year:
+            # Data for current year could be incomplete but should be allowed
+            data_u = xr.DataArray(data_u, dims=('dim_0_{}'.format(var_name_u), 'grid'), name=var_name_u)
+            data_v = xr.DataArray(data_v, dims=('dim_0_{}'.format(var_name_v), 'grid'), name=var_name_v)
+    
+        else:
+            warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data_u.shape))
+    
+        # Assign attributes
+        data_u = data_u.assign_attrs(long_name=long_name+' x-component', units=unit)
+        data_u = data_v.assign_attrs(long_name=long_name+' y-component', units=unit)
+        data_u.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
+        data_v.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
+
     else:
         data = np.array(data).reshape((-1, num_grids))
         
@@ -224,11 +263,9 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
     
         else:
             warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
-            return
 
-    # Assign attributes
+    # Assign attributes and write to file
     data = data.assign_attrs(long_name=long_name, units=unit)
-
     data.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
 
 
