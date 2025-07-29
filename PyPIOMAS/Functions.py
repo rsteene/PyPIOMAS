@@ -239,7 +239,7 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
     
         # Assign attributes
         data_u = data_u.assign_attrs(long_name=long_name+' x-component', units=unit)
-        data_u = data_v.assign_attrs(long_name=long_name+' y-component', units=unit)
+        data_v = data_v.assign_attrs(long_name=long_name+' y-component', units=unit)
         data_u.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
         data_v.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
 
