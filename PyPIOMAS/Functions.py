@@ -264,9 +264,9 @@ def convert_to_netcdf(file_in, short_name, year, long_name, unit, file_out, num_
         else:
             warnings.warn('{} data have shape {}. This is currently not supported.'.format(short_name, data.shape))
 
-    # Assign attributes and write to file
-    data = data.assign_attrs(long_name=long_name, units=unit)
-    data.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
+        # Assign attributes and write to file
+        data = data.assign_attrs(long_name=long_name, units=unit)
+        data.to_netcdf(file_out, mode='a' if os.path.exists(file_out) else 'w')
 
 
 def stack_variables_by_years(file_in, file_out, variable, verbose=True):
